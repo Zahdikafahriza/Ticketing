@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusLayanan {
+  aktif
+  isolir
+  nonaktif
+}
+
+enum Prioritas {
+  normal
+  urgent
+}
+
+enum StatusTiket {
+  open
+  closed
+}
+
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(191)
+  email         String    @unique @db.VarChar(191)
+  password      String    @db.VarChar(255)
+  role          String    @default("admin") @db.VarChar(32)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Site {
+  id          Int         @id @default(autoincrement())
+  kode        String      @db.VarChar(50)
+  nama        String      @db.VarChar(150)
+  area        String?     @db.VarChar(150)
+  alamat      String?     @db.VarChar(255)
+  keterangan  String?     @db.Text
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  pelanggan   Pelanggan[]
+  tickets     Ticket[]
+
+  @@map("sites")
+}
+
+model Pelanggan {
+  id             Int            @id @default(autoincrement())
+  siteId         Int?           @map("site_id")
+  site           Site?          @relation(fields: [siteId], references: [id])
+  kode           String         @unique @db.VarChar(32)
+  nama           String         @db.VarChar(191)
+  noHp           String?        @map("no_hp") @db.VarChar(30)
+  alamat         String?        @db.VarChar(255)
+  statusLayanan  StatusLayanan  @default(aktif) @map("status_layanan")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  tickets        Ticket[]
+
+  @@map("pelanggan")
+}
+
+model Teknisi {
+  id              Int      @id @default(autoincrement())
+  nama            String   @db.VarChar(100)
+  alias           String   @db.VarChar(100)
+  telegramUserId  BigInt?  @map("telegram_user_id")
+  noHp            String?  @map("no_hp") @db.VarChar(30)
+  aktif           Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("teknisi")
+}
+
+model SlaPolicy {
+  id                       Int       @id @default(autoincrement())
+  prioritas                Prioritas
+  targetResponseMinutes    Int       @map("target_response_minutes")
+  targetResolutionMinutes  Int       @map("target_resolution_minutes")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  @@map("sla_policies")
+}
+
+model Ticket {
+  id                  Int                 @id @default(autoincrement())
+  kodeTiket           String              @unique @map("kode_tiket") @db.VarChar(64)
+  judul               String              @db.VarChar(255)
+  deskripsi           String?             @db.Text
+  diagnosa            String?             @db.Text
+  tindakan            String?             @db.Text
+  penyebab            String?             @db.VarChar(255)
+  catatan             String?             @db.Text
+  cc                  String?             @db.VarChar(255)
+  noc                 String?             @db.VarChar(255)
+  siteId              Int?                @map("site_id")
+  site                Site?               @relation(fields: [siteId], references: [id])
+  pelangganId         Int?                @map("pelanggan_id")
+  pelangganRel        Pelanggan?          @relation(fields: [pelangganId], references: [id])
+  pelanggan           String?             @db.VarChar(191)
+  lokasi              String?             @db.VarChar(191)
+  alamat              String?             @db.VarChar(255)
+  kategori            String?             @db.VarChar(100)
+  prioritas           Prioritas           @default(normal)
+  status              StatusTiket         @default(open)
+  assignedTo          String?             @map("assigned_to") @db.VarChar(191)
+  firstAssignedAt     DateTime?           @map("first_assigned_at")
+  paket               String?             @db.VarChar(100)
+  alasanPemutusan     String?             @map("alasan_pemutusan") @db.Text
+  tanggalRealisasi    String?             @map("tanggal_realisasi") @db.VarChar(50)
+  pelaporUserId       String?             @map("pelapor_user_id") @db.VarChar(64)
+  pelaporUsername     String?             @map("pelapor_username") @db.VarChar(191)
+  pelaporNama         String?             @map("pelapor_nama") @db.VarChar(191)
+  chatId              String?             @map("chat_id") @db.VarChar(64)
+  source              String              @default("telegram") @db.VarChar(32)
+  resolvedAt          DateTime?           @map("resolved_at")
+  jamSelesai          String?             @map("jam_selesai") @db.VarChar(20)
+  lastReminderAt      DateTime?           @map("last_reminder_at")
+  reminderCount       Int                 @default(0) @map("reminder_count")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+
+  reminderLogs        TicketReminderLog[]
+
+  @@map("tickets")
+}
+
+model TicketReminderLog {
+  id                  Int       @id @default(autoincrement())
+  ticketId            Int       @map("ticket_id")
+  ticket              Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  kodeTiket           String?   @map("kode_tiket") @db.VarChar(64)
+  statusSaatReminder  String?   @map("status_saat_reminder") @db.VarChar(32)
+  chatId              String?   @map("chat_id") @db.VarChar(64)
+  dikirimAt           DateTime? @map("dikirim_at")
+
+  @@map("ticket_reminder_logs")
+}
+
+model TicketCheckLog {
+  id             Int       @id @default(autoincrement())
+  filterUsed     String?   @map("filter_used") @db.VarChar(255)
+  resultCount    Int?      @map("result_count")
+  actorId        String?   @map("actor_id") @db.VarChar(64)
+  actorUsername  String?   @map("actor_username") @db.VarChar(191)
+  actorName      String?   @map("actor_name") @db.VarChar(191)
+  chatId         String?   @map("chat_id") @db.VarChar(64)
+  n8nEventId     String?   @map("n8n_event_id") @db.VarChar(191)
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("ticket_check_logs")
+}
+
+model ActivityLog {
+  id            Int       @id @default(autoincrement())
+  loggableType  String?   @map("loggable_type") @db.VarChar(191)
+  loggableId    Int?      @map("loggable_id")
+  action        String?   @db.VarChar(64)
+  source        String?   @db.VarChar(32)
+  actorType     String?   @map("actor_type") @db.VarChar(32)
+  actorId       String?   @map("actor_id") @db.VarChar(64)
+  actorName     String?   @map("actor_name") @db.VarChar(191)
+  fieldChanged  String?   @map("field_changed") @db.VarChar(100)
+  oldValue      String?   @map("old_value") @db.Text
+  newValue      String?   @map("new_value") @db.Text
+  metadata      Json?
+  n8nEventId    String?   @map("n8n_event_id") @db.VarChar(191)
+  createdAt     DateTime? @default(now()) @map("created_at")
+
+  @@map("activity_logs")
+}
+
+// Menyimpan kredensial integrasi (n8n webhook, Telegram bot) yang diisi
+// lewat halaman Settings di web — bukan lewat .env / hardcode di kode.
+// Hanya 1 baris (id selalu 1) karena ini setting global aplikasi.
+model Setting {
+  id               Int      @id @default(1)
+  n8nWebhookUrl    String?  @map("n8n_webhook_url") @db.VarChar(500)
+  telegramBotToken String?  @map("telegram_bot_token") @db.VarChar(255)
+  telegramChatId   String?  @map("telegram_chat_id") @db.VarChar(100)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
