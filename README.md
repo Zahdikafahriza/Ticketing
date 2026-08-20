@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Aplikasi Manajemen Pelanggan & Tiket Gangguan (Next.js)
 
 Versi **Next.js 14 (App Router) full-stack** — satu framework untuk backend + frontend, ditulis penuh dalam JavaScript. Ini adalah rewrite dari versi Laravel sebelumnya, dengan **struktur database & alur kerja yang identik** (skema tabel sama, integrasi n8n sama).
@@ -365,3 +366,6 @@ Aplikasi ini pakai **Next.js Server Actions** (`'use server'`) untuk semua opera
 
 - **Tampilan masih terasa "kebesaran" di HP tertentu**: coba hard refresh (bukan cuma reload biasa) — beberapa browser mobile nge-cache viewport lama. Kalau masih terjadi, cek apakah ada extension/proxy yang mengubah header response.
 - **Sidebar tidak mau ketutup setelah klik menu di mobile**: pastikan Anda pakai build terbaru — `Sidebar.jsx` sekarang menerima `onClose` dari `AppShell.jsx`, kalau ada cache build lama (`.next/` folder) hapus dulu (`rm -rf .next`) lalu `npm run build` ulang.
+=======
+# Ticketing
+>>>>>>> 8d23c9594d9dcbd8f8aeee9c617484fb47f8e596
